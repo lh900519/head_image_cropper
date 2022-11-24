@@ -463,11 +463,22 @@ class CropperImageRender extends RenderProxyBox {
   _onPadding(Size size) {
     var fw = size.width / outWidth;
     var fh = size.height / outHeight;
+    var paddingX = maskPadding;
+    var paddingY = maskPadding;
+    double ratio = outWidth / outHeight;
+
     if (fw > fh) {
+      // 纵向
       fw = fh;
+      paddingX = maskPadding;
+      paddingY = maskPadding / ratio;
+    } else {
+      // 横向
+      paddingX = maskPadding;
+      paddingY = maskPadding / ratio;
     }
-    var width = outWidth * fw / 2 - maskPadding;
-    var height = outHeight * fw / 2 - maskPadding;
+    var width = outWidth * fw / 2 - paddingX;
+    var height = outHeight * fw / 2 - paddingY;
     centerX = size.width / 2;
     centerY = size.height / 2;
     left = centerX! - width;
