@@ -438,6 +438,8 @@ class CropperImageRender extends RenderProxyBox {
     } else if (_old2?.device == event.device) {
       _old2 = _new2;
     }
+
+    onUpdate?.call(scale, drawX, drawY);
   }
 
   void handleUpEvent(PointerUpEvent event) {
@@ -712,8 +714,6 @@ class CropperImageRender extends RenderProxyBox {
         drawY = bottom! - centerY! - height;
       }
     }
-
-    onUpdate?.call(scale, drawX, drawY);
   }
 
   @override
