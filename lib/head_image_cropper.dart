@@ -17,6 +17,11 @@ const Color _defualtGridColor = Color.fromARGB(160, 255, 255, 255);
 class CropperController {
   CropperImageElement? _element;
 
+  // 重置显示的大小和位置
+  void reset() {
+    _element?.renderObject.reset();
+  }
+
   Future<ui.Image> outImage() {
     return _element!._outImage();
   }
@@ -44,6 +49,7 @@ class CropperImage extends RenderObjectWidget {
     this.outHeight = 256.0,
     this.maskPadding = 20.0,
     this.round = 8.0,
+    this.onUpdate,
     this.onLoadError,
   }) : super(key: key);
 
@@ -106,6 +112,9 @@ class CropperImage extends RenderObjectWidget {
           BuildContext context, Object exception, StackTrace? stackTrace)?
       onLoadError;
 
+  /// 图片的位置或大小发生了变化
+  final void Function(double scale, double x, double y)? onUpdate;
+
   @override
   CropperImageElement createElement() {
     return CropperImageElement(this);
@@ -113,7 +122,7 @@ class CropperImage extends RenderObjectWidget {
 
   @override
   CropperImageRender createRenderObject(BuildContext context) {
-    return CropperImageRender()
+    return CropperImageRender(onUpdate)
       ..limitations = limitations
       ..isArc = isArc
       ..isRightAngle = isRightAngle
@@ -273,6 +282,10 @@ class Pointer {
 }
 
 class CropperImageRender extends RenderProxyBox {
+  Function(double scale, double x, double y)? onUpdate;
+
+  CropperImageRender(this.onUpdate);
+
   ui.Image? _image;
   bool _limitations = true;
 
@@ -313,6 +326,15 @@ class CropperImageRender extends RenderProxyBox {
   double rotate1 = 0;
 
   Pointer? _old1, _old2, _new1, _new2;
+
+  // 重置到默认显示
+  void reset() {
+    scale = 0;
+    drawX = 0;
+    drawY = 0;
+
+    markNeedsPaint();
+  }
 
   set image(ui.Image? image) {
     _image = image;
@@ -394,8 +416,21 @@ class CropperImageRender extends RenderProxyBox {
       markNeedsPaint();
     } else if ((null != _old1 && null != _new1) ||
         (null != _old2 && null != _new2)) {
-      this.drawX += ((_new1 ?? _new2)!.dx! - (_old1 ?? _old2)!.dx!);
-      this.drawY += ((_new1 ?? _new2)!.dy! - (_old1 ?? _old2)!.dy!);
+      double dx = 0;
+      double dy = 0;
+      if (null != _old1 && null != _new1) {
+        dx = _new1!.dx! - _old1!.dx!;
+        dy = _new1!.dy! - _old1!.dy!;
+      } else if (null != _old2 && null != _new2) {
+        dx = _new2!.dx! - _old2!.dx!;
+        dy = _new2!.dy! - _old2!.dy!;
+      }
+
+      // this.drawX += ((_new1 ?? _new2)!.dx! - (_old1 ?? _old2)!.dx!);
+      // this.drawY += ((_new1 ?? _new2)!.dy! - (_old1 ?? _old2)!.dy!);
+      this.drawX += dx;
+      this.drawY += dy;
+
       markNeedsPaint();
     }
     if (_old1?.device == event.device) {
@@ -666,6 +701,8 @@ class CropperImageRender extends RenderProxyBox {
         drawY = bottom! - centerY! - height;
       }
     }
+
+    onUpdate?.call(scale, drawX, drawY);
   }
 
   @override
